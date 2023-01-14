@@ -1,3 +1,5 @@
+// gcc -o setvolume setvolume.c -lasound
+
 // set-volume is a small utility for ALSA mixer volume
 // It's based on get-volume, written for being used in Conky.
 //
@@ -17,7 +19,7 @@
 static void error_close_exit(char *errmsg, int err, snd_mixer_t *h_mixer)
 {
 	if (err == 0)
-		fprintf(stderr, errmsg);
+		fputs(errmsg, stderr);
 	else
 		fprintf(stderr, errmsg, snd_strerror(err));
 	if (h_mixer != NULL)
@@ -28,7 +30,7 @@ static void error_close_exit(char *errmsg, int err, snd_mixer_t *h_mixer)
 int main(int argc, char** argv)
 {
 	int err;
-	long vol;
+	long vol, min, max;
 	snd_mixer_t *h_mixer;
 	snd_mixer_selem_id_t *sid;
 	snd_mixer_elem_t *elem ;
@@ -63,7 +65,11 @@ int main(int argc, char** argv)
 	if ((elem = snd_mixer_find_selem(h_mixer, sid)) == NULL)
 		error_close_exit("Cannot find simple element\n", 0, h_mixer);
 
-	if ((err = snd_mixer_selem_set_playback_volume_all(elem, vol)) < 0)
+
+    if ((err = snd_mixer_selem_get_playback_volume_range(elem, &min, &max)) < 0)
+        error_close_exit("Mixer simple element get playback volume range error: %s\n", err, h_mixer);
+
+	if ((err = snd_mixer_selem_set_playback_volume_all(elem, vol * max / 100)) < 0)
 		error_close_exit("Volume set error: %s\n", err, h_mixer);
 
 	snd_mixer_close(h_mixer);
